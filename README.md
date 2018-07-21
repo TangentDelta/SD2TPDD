@@ -39,6 +39,7 @@ http://www.club100.org/nads/dos100.co
 If you run into any issues, please let me know!
 
 ## To-Do
+* Move from SD.h to SDfat library for SD card access
 * Sub-directory support
 * A protocol expansion allowing access to files greater than 64KB in size
 * Full NADSBox compatibility
