@@ -24,6 +24,8 @@ Arduino SD library (downloaded from library manager)
 * Attach the SPI SD card reader to the microcontroller's power rail.
 * Attach the RS232 level shifter to the TX/RX pins of hardware serial port 1 (hardware serial port 0 is the built-in port used for debugging)
 * Attach the RS232 level shifter to the microcontroller's power rail.
+* Bridge the CTS and RTS pins on the RS232 connector (Required for TS-DOS)
+* Bridge the DTR and DSR pins on the RS232 connector (Required for TS-DOS)
 ### Software
 * Load the source file into the Arduino IDE
 * Download the SPI and SD libraries from the library manager
