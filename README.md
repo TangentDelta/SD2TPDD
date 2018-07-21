@@ -35,3 +35,11 @@ If you plan on using TS-DOS, some versions require that you have a DOS100.CO fil
 http://www.club100.org/nads/dos100.co
 
 If you run into any issues, please let me know!
+
+## To-Do
+* Sub-directory support
+* A protocol expansion allowing access to files greater than 64KB in size
+* Full NADSBox compatibility
+* A command-line that can be accessed from the computer's terminal emulator for quicker file manipulation
+* Hayes modem emulation using an ESP8266
+* FTP server/client access using an ESP8266
