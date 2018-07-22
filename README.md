@@ -29,8 +29,12 @@ Bill Greiman's SdFat library (downloaded from library manager)
 ### Software
 * Load the source file into the Arduino IDE
 <<<<<<< HEAD
-* Download the SPI and SdFat libraries from the library manager
+<<<<<<< HEAD
+* Download the SPI and SD libraries from the library manager
 =======
+=======
+* Download the SPI and SdFat libraries from the library manager
+>>>>>>> 1a7caf961b1f8d1cfc810b834c7e0300aaf72a6e
 * Download the SPI and SD libraries from the library manager
 >>>>>>> a22a8122109dd27aa77997b71930bab6a76350b7
 * Make any changes if needed
@@ -44,10 +48,14 @@ If you run into any issues, please let me know!
 
 ## To-Do
 <<<<<<< HEAD
-* (Done!) Move from SD.h to SDfat library for SD card access
+<<<<<<< HEAD
+* Move from SD.h to SDfat library for SD card access
 =======
 * Move from SD.h to SDfat library for SD card access
 >>>>>>> a22a8122109dd27aa77997b71930bab6a76350b7
+=======
+* (Done!) Move from SD.h to SDfat library for SD card access
+>>>>>>> 1a7caf961b1f8d1cfc810b834c7e0300aaf72a6e
 * Sub-directory support
 * A protocol expansion allowing access to files greater than 64KB in size
 * Full NADSBox compatibility
