@@ -28,15 +28,7 @@ Bill Greiman's SdFat library (downloaded from library manager)
 * Bridge the DTR and DSR pins on the RS232 connector (Required for TS-DOS)
 ### Software
 * Load the source file into the Arduino IDE
-<<<<<<< HEAD
-<<<<<<< HEAD
-* Download the SPI and SD libraries from the library manager
-=======
-=======
 * Download the SPI and SdFat libraries from the library manager
->>>>>>> 1a7caf961b1f8d1cfc810b834c7e0300aaf72a6e
-* Download the SPI and SD libraries from the library manager
->>>>>>> a22a8122109dd27aa77997b71930bab6a76350b7
 * Make any changes if needed
 * Compile the code and upload it to the microcontroller
 
@@ -47,22 +39,10 @@ http://www.club100.org/nads/dos100.co
 If you run into any issues, please let me know!
 
 ## To-Do
-<<<<<<< HEAD
-<<<<<<< HEAD
-* Move from SD.h to SDfat library for SD card access
-=======
-* Move from SD.h to SDfat library for SD card access
->>>>>>> a22a8122109dd27aa77997b71930bab6a76350b7
-=======
 * (Done!) Move from SD.h to SDfat library for SD card access
->>>>>>> 1a7caf961b1f8d1cfc810b834c7e0300aaf72a6e
 * Sub-directory support
 * A protocol expansion allowing access to files greater than 64KB in size
 * Full NADSBox compatibility
 * A command-line that can be accessed from the computer's terminal emulator for quicker file manipulation
 * Hayes modem emulation using an ESP8266
 * FTP server/client access using an ESP8266
-<<<<<<< HEAD
-
-=======
->>>>>>> a22a8122109dd27aa77997b71930bab6a76350b7
