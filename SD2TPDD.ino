@@ -6,16 +6,15 @@
  */
 
 #include <SPI.h>
-#include <SD.h>
+#include <SdFat.h>
 
-Sd2Card card;
-SdVolume volume;
+SdFat SD;
 
 File root;  //Root file for filesystem reference
 File entry; //Moving file entry for the emulator
 File tempEntry; //Temporary entry for moving files
 
-const int chipSelect = 4; //SD Card chip select pin
+const byte chipSelect = 4; //SD Card chip select pin
 
 byte head = 0;  //Head index
 byte tail = 0;  //Tail index
@@ -36,9 +35,7 @@ void setup() {
   Serial.begin(19200);  //Start the debug serial port
   Serial1.begin(19200);  //Start the main serial port
 
-  for(int i=0; i<256; i++){ //Clear the data buffer
-    dataBuffer[i] = 0;
-  }
+  clearBuffer(dataBuffer, 256); //Clear the data buffer
 
   Serial.print("Initializing SD card...");
 
@@ -54,7 +51,14 @@ void setup() {
 
 }
 
+/*
+ * 
+ * General misc. routines
+ * 
+ */
+
 void printDirectory(File dir, int numTabs) { //Copied code from the file list example for debug purposes
+  char fileName[24] = "";
   while (true) {
 
     File entry =  dir.openNextFile();
@@ -65,16 +69,23 @@ void printDirectory(File dir, int numTabs) { //Copied code from the file list ex
     for (uint8_t i = 0; i < numTabs; i++) {
       Serial.print('\t');
     }
-    Serial.print(entry.name());
+    entry.getName(fileName,24);
+    Serial.print(fileName);
     if (entry.isDirectory()) {
       Serial.println("/");
       printDirectory(entry, numTabs + 1);
     } else {
       // files have sizes, directories do not
       Serial.print("\t\t");
-      Serial.println(entry.size(), DEC);
+      Serial.println(entry.fileSize(), DEC);
     }
     entry.close();
+  }
+}
+
+void clearBuffer(byte* buffer, int bufferSize){ //Fills the buffer with 0x00
+  for(int i=0; i<bufferSize; i++){
+    buffer[i] = 0x00;
   }
 }
 
@@ -112,26 +123,20 @@ void return_normal(byte errorCode){ //Sends a normal return to the TPDD port wit
 }
 
 void return_reference(){  //Sends a reference return to the TPDD port
-  bool terminated = false;  //Flag for name termination
-  //byte checksum = 0;
-
   tpddWrite(0x11);  //Return type (reference)
   tpddWrite(0x1C);  //Data size (1C)
 
-  for(int i=0; i<24; i++){  //Send the open entry's name
-    if(!terminated){  //If we haven't reached the termination of the string...
-      tpddWrite(entry.name()[i]); //...output the current char of the name...
-      if(entry.name()[i]==0x00){  //..check if we have reached the null termination
-        terminated=true;  //...set the termination flag if we have.
-      }
-    }else{  //If we have reached the termination...
-      tpddWrite(0x00);  //...send null chars to pad the reference name.
-    }
+  clearBuffer(refFileName,24);  //Clear the reference file name buffer
+
+  entry.getName(refFileName,24);  //Save the current file entry's name to the reference file name buffer
+
+  for(int i=0; i<24; i++){
+    tpddWrite(refFileName[i]);  //Write the reference file name to the TPDD port
   }
 
   tpddWrite(0x00);  //Attribute, unused
-  tpddWrite((byte)((entry.size()&0xFF00)>>8));  //File size most significant byte
-  tpddWrite((byte)(entry.size()&0xFF)); //File size least significant byte
+  tpddWrite((byte)((entry.fileSize()&0xFF00)>>8));  //File size most significant byte
+  tpddWrite((byte)(entry.fileSize()&0xFF)); //File size least significant byte
   tpddWrite(0xFF);  //Free sectors, SD card has more than we'll ever care about
   tpddSendChecksum(); //Checksum
 
@@ -266,7 +271,6 @@ void command_condition(){ //Not implemented
 
 void command_rename(){  //Renames the currently open entry
   byte refIndex = 0;  //Temporary index for the reference name
-  // TODO: Implement a different SD card library that supports renaming! This is a very messy hack, but it works.
   
   for(int i=4; i<28; i++){  //Loop through the command's data block, which contains the new entry name
       if(dataBuffer[(byte)(tail+i)]!=0x20){ //If the current character is not a space (0x20)...
@@ -276,17 +280,7 @@ void command_rename(){  //Renames the currently open entry
   
   tempRefFileName[refIndex]=0x00; //Terminate the temporary reference name with a null character
 
-  entry = SD.open(refFileName,FILE_READ); //Open the old entry
-  tempEntry = SD.open(tempRefFileName,FILE_WRITE);  //Open the new entry
-  
-  while(entry.available()){ //While there is data to be read from the old entry...
-    tempEntry.write(entry.read());  //...write the old entry data to the new entry.
-  }
-  
-  entry.close();  //Close the old entry
-  tempEntry.close();  //Close the new entry
-  
-  SD.remove(refFileName); //Delete the old entry
+  SD.rename(refFileName, tempRefFileName);  //Rename the file
   
   return_normal(0x00);  //Send a normal return to the TPDD port with no error
 }
