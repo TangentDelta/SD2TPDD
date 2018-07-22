@@ -15,7 +15,7 @@ RS232 level shifter for the TPDD port going to the computer (MAX232 or MAX3232 p
 ```
 Arduino IDE
 Arduino SPI library (downloaded from library manager)
-Arduino SD library (downloaded from library manager)
+Bill Greiman's SdFat library (downloaded from library manager)
 ```
 
 ## Assembly
@@ -28,6 +28,7 @@ Arduino SD library (downloaded from library manager)
 * Bridge the DTR and DSR pins on the RS232 connector (Required for TS-DOS)
 ### Software
 * Load the source file into the Arduino IDE
+* Download the SPI and SdFat libraries from the library manager
 * Download the SPI and SD libraries from the library manager
 * Make any changes if needed
 * Compile the code and upload it to the microcontroller
@@ -39,7 +40,7 @@ http://www.club100.org/nads/dos100.co
 If you run into any issues, please let me know!
 
 ## To-Do
-* Move from SD.h to SDfat library for SD card access
+* (Done!) Move from SD.h to SDfat library for SD card access
 * Sub-directory support
 * A protocol expansion allowing access to files greater than 64KB in size
 * Full NADSBox compatibility
