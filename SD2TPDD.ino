@@ -16,14 +16,15 @@ File tempEntry; //Temporary entry for moving files
 
 const byte chipSelect = 4; //SD Card chip select pin
 
-byte head = 0;  //Head index
-byte tail = 0;  //Tail index
+byte head = 0x00;  //Head index
+byte tail = 0x00;  //Tail index
 
 byte checksum = 0;  //Global variable for checksum calculation
 
 byte state = 0; //Emulator command reading state
 
 byte dataBuffer[256]; //Data buffer for commands
+byte fileBuffer[0x80]; //Data buffer for file reading
 
 char refFileName[25] = "";  //Reference file name for emulator
 char tempRefFileName[25] = ""; //Second reference file name for renaming
@@ -48,6 +49,8 @@ void setup() {
   root = SD.open("/");  //Create the root filesystem entry
 
   printDirectory(root,0); //Print directory for debug purposes
+
+  root.close();
 
 }
 
@@ -126,12 +129,12 @@ void return_reference(){  //Sends a reference return to the TPDD port
   tpddWrite(0x11);  //Return type (reference)
   tpddWrite(0x1C);  //Data size (1C)
 
-  clearBuffer(refFileName,24);  //Clear the reference file name buffer
+  clearBuffer(tempRefFileName,24);  //Clear the reference file name buffer
 
-  entry.getName(refFileName,24);  //Save the current file entry's name to the reference file name buffer
+  entry.getName(tempRefFileName,24);  //Save the current file entry's name to the reference file name buffer
 
   for(int i=0; i<24; i++){
-    tpddWrite(refFileName[i]);  //Write the reference file name to the TPDD port
+    tpddWrite(tempRefFileName[i]);  //Write the reference file name to the TPDD port
   }
 
   tpddWrite(0x00);  //Attribute, unused
@@ -143,6 +146,23 @@ void return_reference(){  //Sends a reference return to the TPDD port
   Serial.println("R:Ref");
 }
 
+void return_blank_reference(){  //Sends a blank reference return to the TPDD port
+  tpddWrite(0x11);  //Return type (reference)
+  tpddWrite(0x1C);  //Data size (1C)
+
+  for(int i=0; i<24; i++){
+    tpddWrite(0x00);  //Write the reference file name to the TPDD port
+  }
+
+  tpddWrite(0x00);  //Attribute, unused
+  tpddWrite(0x00);  //File size most significant byte
+  tpddWrite(0x00); //File size least significant byte
+  tpddWrite(0xFF);  //Free sectors, SD card has more than we'll ever care about
+  tpddSendChecksum(); //Checksum
+
+  Serial.println("R:BRef");
+}
+
 /*
  * 
  * TPDD Port command handler routines
@@ -152,6 +172,8 @@ void return_reference(){  //Sends a reference return to the TPDD port
 void command_reference(){ //Reference command handler
   byte searchForm = dataBuffer[(byte)(tail+29)];  //The search form byte exists 29 bytes into the command
   byte refIndex = 0;  //Reference file name index
+
+  root = SD.open("/");
   
   Serial.print("SF:");
   Serial.println(searchForm,HEX);
@@ -172,7 +194,7 @@ void command_reference(){ //Reference command handler
       return_reference(); //send a refernce return to the TPDD port with its info...
       entry.close();  //...close the entry.
     }else{  //If the file does not exist...
-      return_normal(0x10);  //...send a normal return to the TPDD port with a "file does not exist" error.
+      return_blank_reference();
     }
     
   }else if(searchForm == 0x01){ //Request first directory block
@@ -197,10 +219,13 @@ void command_reference(){ //Reference command handler
   }else{  //Parameter is invalid
     return_normal(0x36);  //Send a normal return to the TPDD port with a parameter error
   }
+
+  root.close();
 }
 
 void command_open(){  //Opens an entry for reading, writing, or appending
   byte rMode = dataBuffer[(byte)(tail+4)];  //The access mode is stored in the 5th byte of the command
+  entry.close();
   
   switch(rMode){
     case 0x01: entry = SD.open(refFileName, FILE_WRITE); append=false; break; //Write
@@ -221,33 +246,38 @@ void command_close(){ //Closes the currently open entry
 }
 
 void command_read(){  //Read a block of data from the currently open entry
-  int avail = entry.available();  //Number of bytes left in the open file
-  avail = avail>0x80?0x80:avail; //Cap the number of available bytes to 0x80 (128)
+  int bytesRead = entry.read(fileBuffer, 0x80); //Try to pull 128 bytes from the 
+  //Serial.print("A: ");
+  //Serial.println(entry.available(),HEX);
 
-  tpddWrite(0x10);  //Return type (read)
-  
-  if(avail>0){  //If there is data to be read from the file...
-    tpddWrite(avail); //...output the data block size to the TPDD port, cap it at 0x80...
-    for(int i=0; i<avail; i++){ //...loop through all of the available bytes to read...
-      tpddWrite(entry.read()); //...read a byte from the file and output it to the TPDD port...
+  if(bytesRead > 0){
+    tpddWrite(0x10);
+    tpddWrite(bytesRead);
+    for(int i=0; i<bytesRead; i++){
+      tpddWrite(fileBuffer[i]);
     }
-    tpddSendChecksum(); //...send the checksum to the TPDD port.
-  }else{  //If there is no data left...
+    tpddSendChecksum();
+  }else{
     return_normal(0x3F);  //...send a normal return with an end-of-file error.
   }
 }
 
 void command_write(){ //Write a block of data from the command to the currently open entry
-  if(append){ //If the append flag is set...
-    for(int i=0; i<dataBuffer[(byte)(tail+3)]; i++){  //...loop through the command data block...
-      entry.print(dataBuffer[(byte)(tail+4+i)]);  //...and append (print) the data to the currently open file.
-    }
-  }else{  //If the append flag is not set...
-    for(int i=0; i<dataBuffer[(byte)(tail+3)]; i++){  //...loop through the command data block...
-      entry.write(dataBuffer[(byte)(tail+4+i)]);  //...and write the data to the currently open file.
+  byte commandDataLength = dataBuffer[(byte)(tail+3)];
+  Serial.print("L: ");
+  Serial.println(commandDataLength);
+
+  for(int i=0; i<commandDataLength; i++){
+    if(append){
+      Serial.println(entry.print(dataBuffer[(byte)(tail+4+i)]),BIN);
+    }else{
+      Serial.println(entry.print(dataBuffer[(byte)(tail+4+i)]),BIN);
     }
   }
-  entry.flush();  //Flush the data to be written to the SD card to prevent corruption
+
+  Serial.println(entry.getWriteError());
+  
+  //entry.flush();  //Flush the data to be written to the SD card to prevent corruption
   return_normal(0x00);  //Send a normal return to the TPDD port with no error
 }
 
@@ -314,13 +344,13 @@ void loop() {
       //Serial.println((dataBuffer[head-1]>=0x20)&&(dataBuffer[head-1]<=0x7E)?(char)dataBuffer[head-1]:' ');
     }
 
-    diff=head-tail; //...set the difference between the head and tail index (number of bytes in the buffer)
+    diff=(byte)(head-tail); //...set the difference between the head and tail index (number of bytes in the buffer)
 
     if(state == 0){ //...if we're waiting for a command...
       if(diff >= 4){  //...if there are 4 or more characters in the buffer...
         if(dataBuffer[tail]=='Z' && dataBuffer[(byte)(tail+1)]=='Z'){ //...if the buffer's first two characters are 'Z' (a TPDD command)
-          rLength = dataBuffer[tail+3]; //...get the command length...
-          rType = dataBuffer[tail+2]; //...get the command type...
+          rLength = dataBuffer[(byte)(tail+3)]; //...get the command length...
+          rType = dataBuffer[(byte)(tail+2)]; //...get the command type...
           state = 1;  //...set the state to "waiting for full command".
         }else{  //...if the first two characters are not 'Z'...
           tail=tail+(tail==head?0:1); //...move the tail index forward to the next character, stop if we reach the head index to prevent an overflow.
@@ -357,6 +387,11 @@ void loop() {
     case 0x0D: command_rename(); break;
     default: return_normal(0x36); break;  //Send a normal return with a parameter error if the command is not implemented
   }
-
+  //Serial.print(head,HEX);
+  //Serial.print(":");
+  //Serial.print(tail,HEX);
+  //Serial.print("->");
   tail = tail+rLength+5;  //Increment the tail index past the previous command
+  //Serial.println(tail,HEX);
+  
 }
