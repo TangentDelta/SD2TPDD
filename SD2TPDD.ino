@@ -232,6 +232,10 @@ void command_open(){  //Opens an entry for reading, writing, or appending
     case 0x02: entry = SD.open(refFileName, FILE_WRITE); append=true; break;  //Append, set the append flag
     case 0x03: entry = SD.open(refFileName, FILE_READ); append=false; break;  //Read
   }
+
+  if(!entry){
+    Serial.println("Error: File could not be opened!");
+  }
   
   if(SD.exists(refFileName)){ //If the file actually exists...
     return_normal(0x00);  //...send a normal return with no error.
@@ -269,13 +273,13 @@ void command_write(){ //Write a block of data from the command to the currently 
 
   for(int i=0; i<commandDataLength; i++){
     if(append){
-      Serial.println(entry.print(dataBuffer[(byte)(tail+4+i)]),BIN);
+      entry.print(dataBuffer[(byte)(tail+4+i)]);
     }else{
-      Serial.println(entry.print(dataBuffer[(byte)(tail+4+i)]),BIN);
+      entry.write(dataBuffer[(byte)(tail+4+i)]);
     }
   }
 
-  Serial.println(entry.getWriteError());
+  //Serial.println(entry.getWriteError());
   
   //entry.flush();  //Flush the data to be written to the SD card to prevent corruption
   return_normal(0x00);  //Send a normal return to the TPDD port with no error
