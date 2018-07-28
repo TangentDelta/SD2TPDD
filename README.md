@@ -3,6 +3,10 @@ A hardware emulator of the Tandy Portable Disk Drive using an SD card for mass s
 ## Verbose Description
 The SD2TPDD is a project that aims to provide an easy-to-use, cheap, and reliable mass storage solution for the TRS-80 Model 100 series of computers. 
 
+At the moment, SD2TPDD can:
+* Emulate the basic file-access functions of a TPDD1
+* Provide DME directory access
+
 ## Requirements
 ### Hardware
 ```
@@ -33,16 +37,24 @@ Bill Greiman's SdFat library (downloaded from library manager)
 * Compile the code and upload it to the microcontroller
 
 ## Notes
-If you plan on using TS-DOS, some versions require that you have a DOS100.CO file on the media. This file can be downloaded from here:
+If you plan on using TS-DOS, some versions require that you have a DOS100.CO file on the root of the media. This file can be downloaded from here:
 http://www.club100.org/nads/dos100.co
 
 If you run into any issues, please let me know!
 
 ## To-Do
 * (Done!) Move from SD.h to SDfat library for SD card access
-* Sub-directory support
+* (Done!) Sub-directory support
 * A protocol expansion allowing access to files greater than 64KB in size
 * Full NADSBox compatibility
 * A command-line that can be accessed from the computer's terminal emulator for quicker file manipulation
 * Hayes modem emulation using an ESP8266
 * FTP server/client access using an ESP8266
+
+## Change-log
+### V0.2 (7/27/2018)
+* Added DME support
+* Corrected some file name padding bugs
+
+### V0.1 (7/21/2018)
+* Initial testing release with basic TPDD1 emulation
